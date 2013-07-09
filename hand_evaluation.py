@@ -92,7 +92,7 @@ SUITS = ['c', 'd', 'h', 's']
 # strength denotes the value for tiebreaking same category
 
 def old_full_classify_hand(hand):
-    if (len(hand) != 5): raise Error('hand of wrong size')
+    if (len(hand) != 5): raise Exception('hand of wrong size')
     
     #####################
     # ORGANIZE BY SUITS
@@ -201,7 +201,7 @@ def old_full_classify_hand(hand):
     return (cat, stre)
 
 def full_classify_hand(hand):
-    if (len(hand) < 5): raise Error('hand of wrong size')
+    if (len(hand) < 5): raise Exception('hand of wrong size')
     
     #####################
     # ORGANIZE BY SUITS
