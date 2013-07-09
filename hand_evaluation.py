@@ -34,26 +34,29 @@ def poker_hand_comparator(handA, handB):
     return -1
     
 #categories:
-STRAIGHT_FLUSH = -1
-KIND4          = -2
-FULL_HOUSE     = -3
-FLUSH          = -4
-STRAIGHT       = -5
-KIND3          = -6
-TWO_PAIR       = -7
-PAIR           = -8
-HIGH           = -9
+STRAIGHT_FLUSH = 9
+KIND4          = 8
+FULL_HOUSE     = 7
+FLUSH          = 6
+STRAIGHT       = 5
+KIND3          = 4
+TWO_PAIR       = 3
+PAIR           = 2
+HIGH           = 1
+
+pows = [15**i for i in range(5)]
 
 
 hands_memo = None
 def classify_hand(hand):
-    global hands_memo
-    if not hands_memo:
-        with profiler('Loading memo...'):
-            with open('final_hands_memo.dat') as f:
-                hands_memo = json.load(f)
-    key = str(sorted(hand))
-    return hands_memo[key]
+  #return full_classify_hand(hand);
+  global hands_memo
+  if not hands_memo:
+      with profiler('Loading memo...'):
+          with open('final_hands_memo.dat') as f:
+              hands_memo = json.load(f)
+  key = str(sorted(hand))
+  return hands_memo[key]
 
 
 #return (category, strength)
@@ -61,58 +64,54 @@ def classify_hand(hand):
 def full_classify_hand(hand):
     if (len(hand) != 5): raise Error('hand of wrong size')
     
-    #flush?
     suits = [card[1] for card in hand]
-    #is_flush = (len(set(suits)) == 1)
-    is_flush = (suits.count(suits[0]) == 5)
-    #care only about ranks now
     ranks = [card[0] for card in hand]
-    ##replace aces (1) with (14) (sigh)
-    #ranks = [14 if x==1 else x for x in ranks]
     ranks.sort()
-    
-    #straight?
+
+    is_flush = (suits.count(suits[0]) == 5) 
+
+    # care only about ranks now
     is_straight = True
     for i in range(4):
         if ranks[i+1] != ranks[i] + 1:
             is_straight = False
             break   
-    #special A 2 3 4 5 case
+    # special A 2 3 4 5 case
     if ranks[0] == 2 and ranks[1] == 3 and ranks[2] == 4 and ranks[3] == 5 and ranks[4] == 14:
         is_straight = True
     
-    #put into buckets
+    # put into buckets
     cnt = collections.Counter()
     for x in ranks:
         cnt[x] += 1
     amts = cnt.most_common()
     
-    #straight flush
+    # straight flush
     if (is_flush and is_straight):
         cat = STRAIGHT_FLUSH
-        #tiebreak by high card
+        # tiebreak by high card
         stre = ranks[4]
-        #A 2 3 4 5 case
+        # A 2 3 4 5 case
         if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
     
-    #four of a kind
+    # four of a kind
     if amts[0][1] == 4:
         return (KIND4, amts[0][0])
     
-    #full house
+    # full house
     if amts[0][1] == 3 and amts[1][1] == 2:
         return (FULL_HOUSE, amts[0][0])
         
-    #flush
+    # flush
     if (is_flush):
         cat = FLUSH
         stre = 0
         for i in range(5):
-            stre += ranks[i]*(100**i)
+            stre += ranks[i]*pows[i]
         return (cat, stre)
     
-    #straight
+    # straight
     if is_straight:
         cat = STRAIGHT
         #tiebreak by high card
@@ -121,11 +120,11 @@ def full_classify_hand(hand):
         if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
     
-    #trips
+    # trips
     if amts[0][1] == 3:
         return (KIND3, amts[0][0])
         
-    #2 pair
+    # 2 pair
     if amts[0][1] == 2 and amts[1][1] == 2:
         cat = TWO_PAIR
         #sort pairvalues
@@ -136,26 +135,26 @@ def full_classify_hand(hand):
         tiebreaker = [amts[2][0], pv2, pv1]
         stre = 0
         for i in range(3):
-            stre += tiebreaker[i]*(100**i)
+            stre += tiebreaker[i]*pows[i]
         return (cat, stre)
         
-    #pair
+    # pair
     if amts[0][1] == 2:
         cat = PAIR
         #sort other vals
-        others = [amts[i][0] for i in [1,2,3]]
+        others = [amts[i][0] for i in range(1,4)]
         others.sort()
         others.append(amts[0][0])
         stre = 0
         for i in range(4):
-            stre += others[i]*(100**i)
+            stre += others[i]*pows[i]
         return (cat, stre)
         
     #high card
     cat = HIGH
     stre = 0
     for i in range(5):
-        stre += ranks[i]*(100**i)
+        stre += ranks[i]*pows[i]
     return (cat, stre)
 
 
