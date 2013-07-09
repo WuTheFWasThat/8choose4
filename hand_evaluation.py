@@ -13,24 +13,33 @@ def get_cards(*args):
     return [get_card(i) for i in args]
 
 #give best 5 card hand out of a list of cards
-def best_hand(cards):
+def best_poker_hand(cards):
     all_hands = itertools.combinations(cards, 5)
     best = None
     for hand in all_hands:
-        if (not best) or compare(hand, best) > 0:
+        if (not best) or compare_poker_hand(hand, best) > 0:
             best = hand
     return best
     
 #returns < 0 if hand a < hand b
 #returns 0 if hand a ties hand b
 # returns > 0 if hand a > hand b
-def compare(handA, handB):
+def compare_poker_hand(handA, handB):
     classA = classify_hand(handA)
     classB = classify_hand(handB)
     if classA[0] != classB[0]:
         return classA[0] - classB[0]
     else:
         return classA[1] - classB[1]
+
+def poker_hand_comparator(handA, handB):
+  diff = compare_poker_hand(handA, handB)
+  if diff > 0:
+    return 1
+  elif diff == 0:
+    return 0
+  else:
+    return -1
     
 #categories:
 STRAIGHT_FLUSH = -1
