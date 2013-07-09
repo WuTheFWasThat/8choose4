@@ -1,17 +1,6 @@
 import collections
 import itertools
 
-#testing
-def get_card(i):
-    ranks = range(1,14)
-    rank = ranks[i % 13]
-    suits = ['c', 'd', 'h', 's']
-    suit = suits[i % 4]
-    return (rank, suit)
-    
-def get_cards(*args):
-    return [get_card(i) for i in args]
-
 #give best 5 card hand out of a list of cards
 def best_poker_hand(cards):
     all_hands = itertools.combinations(cards, 5)

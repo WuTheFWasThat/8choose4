@@ -10,6 +10,36 @@ card_numbers = range(1, 14)
 # card_suit is in the set set(['c', 'd', 'h', 's'])
 card_suits = ['c', 'd', 'h', 's']
 
+string_to_number_mapping = {
+    '1'  : 14,
+    '2'  : 2,
+    '3'  : 3,
+    '4'  : 4,
+    '5'  : 5,
+    '6'  : 6,
+    '7'  : 7,
+    '8'  : 8,
+    '9'  : 9,
+    '10' : 10,
+    '11' : 11,
+    '12' : 12,
+    '13' : 13,
+    '14' : 14,
+    'j'  : 11,
+    'q'  : 12,
+    'k'  : 13,
+    'a'  : 14
+}
+
+def string_to_card(string):
+  num = string[0:-1]
+  suit = string[-1]
+  try:
+    num = int(num)
+  except:
+    num = string_to_number_mapping[num]
+  return (num, suit)
+
 hand_size = 8
 num_passed = 4
 
@@ -48,26 +78,27 @@ def generate_hands():
 
   return hands 
 
-hands = generate_hands()
-print hands
+if __name__=="__main__":
+  hands = generate_hands()
+  print hands
 
-t = time.time()
-payoff_matrix = []
-for pass1 in choose_generator(hand_size, num_passed):
-  row = []
-  for pass2 in choose_generator(hand_size, num_passed):
-    hand1 = set() 
-    hand2 = set() 
-    for i in range(hand_size):
-      if i in pass1: hand2.add(hands[0][i])
-      else:          hand1.add(hands[0][i])
-      if i in pass2: hand1.add(hands[1][i])
-      else:          hand2.add(hands[1][i])
-    best_hand_1 = hand_evaluation.best_poker_hand(hand1)
-    best_hand_2 = hand_evaluation.best_poker_hand(hand2)
-    winner = hand_evaluation.poker_hand_comparator(best_hand_1, best_hand_2)
-    row.append(winner)
-  payoff_matrix.append(row)
-
-print time.time() - t , 'seconds elapsed'
-print payoff_matrix
+  t = time.time()
+  payoff_matrix = []
+  for pass1 in choose_generator(hand_size, num_passed):
+    row = []
+    for pass2 in choose_generator(hand_size, num_passed):
+      hand_A = set() 
+      hand_B = set() 
+      for i in range(hand_size):
+        if i in pass1: hand_B.add(hands[0][i])
+        else:          hand_A.add(hands[0][i])
+        if i in pass2: hand_A.add(hands[1][i])
+        else:          hand_B.add(hands[1][i])
+      best_hand_A = hand_evaluation.best_poker_hand(hand_A)
+      best_hand_B = hand_evaluation.best_poker_hand(hand_B)
+      winner = hand_evaluation.poker_hand_comparator(best_hand_A, best_hand_B)
+      row.append(winner)
+    payoff_matrix.append(row)
+  
+  print time.time() - t , 'seconds elapsed'
+  print payoff_matrix
