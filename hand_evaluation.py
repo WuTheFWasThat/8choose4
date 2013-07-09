@@ -89,7 +89,7 @@ def classify_hand(hand):
         #tiebreak by high card
         stre = ranks[4]
         #A 2 3 4 5 case
-        if ranks[4] == 14 and ranks[3] == 5: str = 5
+        if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
     
     #four of a kind
@@ -114,7 +114,7 @@ def classify_hand(hand):
         #tiebreak by high card
         stre = ranks[4]
         #A 2 3 4 5 case
-        if ranks[4] == 14 and ranks[3] == 5: str = 5
+        if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
     
     #trips
