@@ -104,9 +104,13 @@ def get_payoff_matrix(hand_A, hand_B):
         else:          new_hand_A.add(hand_A[i])
         if i in pass2: new_hand_A.add(hand_B[i])
         else:          new_hand_B.add(hand_B[i])
-      best_hand_A = hand_evaluation.best_poker_hand(new_hand_A)
-      best_hand_B = hand_evaluation.best_poker_hand(new_hand_B)
-      winner = hand_evaluation.poker_hand_comparator(best_hand_A, best_hand_B)
+      winner = hand_evaluation.poker_hand_comparator(new_hand_A, new_hand_B)
+
+      # best_hand_A = hand_evaluation.best_poker_hand(new_hand_A)
+      # best_hand_B = hand_evaluation.best_poker_hand(new_hand_B)
+      # old_winner = hand_evaluation.poker_hand_comparator(best_hand_A, best_hand_B)
+      # if (winner != old_winner): print 'asdf', winner, old_winner
+
       row.append(winner)
     payoff_matrix.append(row)
   return payoff_matrix

@@ -4,15 +4,22 @@ import itertools
 import json
 import time
 
-#give best 5 card hand out of a list of cards
 def best_poker_hand(cards):
     all_hands = itertools.combinations(cards, 5)
     best = None
     for hand in all_hands:
-        if (not best) or compare_poker_hand(hand, best) > 0:
+        if (not best) or old_compare_poker_hand(hand, best) > 0:
             best = hand
     return best
-    
+
+def old_compare_poker_hand(handA, handB):
+    classA = old_full_classify_hand(handA)
+    classB = old_full_classify_hand(handB)
+    if classA[0] != classB[0]:
+        return classA[0] - classB[0]
+    else:
+        return classA[1] - classB[1]
+
 #returns < 0 if hand a < hand b
 #returns 0 if hand a ties hand b
 # returns > 0 if hand a > hand b
@@ -44,12 +51,12 @@ TWO_PAIR       = 3
 PAIR           = 2
 HIGH           = 1
 
-pows = [15**i for i in range(5)]
-
+pow_base= 100
+pows = [pow_base**i for i in range(5)]
 
 hands_memo = None
 def classify_hand(hand):
-  #return full_classify_hand(hand);
+  return full_classify_hand(hand);
   global hands_memo
   if not hands_memo:
       with profiler('Loading memo...'):
@@ -58,13 +65,49 @@ def classify_hand(hand):
   key = str(sorted(hand))
   return hands_memo[key]
 
+def get_straight(ranks): # set of numbers
+  rank_order = [14] + range(2, 15)
+  streak = 0
+  for i in range(13, -1, -1):
+    if rank_order[i] in ranks:
+      streak += 1
+      if streak == 5:
+        return rank_order[i + 4]
+    else:
+      streak = 0
+  return 0
 
-#return (category, strength)
-#strength denotes the value for tiebreaking same category
-def full_classify_hand(hand):
+def get_tiebreak(ranks, num = 5): # returns tiebreaker number for a set of 5 cards (taking the 5 highest)
+  ranks = list(ranks)
+  ranks.sort()
+  tiebreak = 0
+  for i in range(-1, -num-1, -1):
+    tiebreak *= pow_base
+    tiebreak += ranks[i]
+  return tiebreak
+
+
+SUITS = ['c', 'd', 'h', 's']
+# return (category, strength)
+# strength denotes the value for tiebreaking same category
+
+def old_full_classify_hand(hand):
     if (len(hand) != 5): raise Error('hand of wrong size')
     
+    #####################
+    # ORGANIZE BY SUITS
+    #####################
+
     suits = [card[1] for card in hand]
+    # put into buckets
+    suit_hands = {x: set() for x in SUITS}
+    for card in hand:
+      suit_hands[card[1]].add(card[0])
+
+    #####################
+    # ORGANIZE BY RANKS
+    #####################
+
     ranks = [card[0] for card in hand]
     ranks.sort()
 
@@ -157,13 +200,110 @@ def full_classify_hand(hand):
         stre += ranks[i]*pows[i]
     return (cat, stre)
 
+def full_classify_hand(hand):
+    if (len(hand) < 5): raise Error('hand of wrong size')
+    
+    #####################
+    # ORGANIZE BY SUITS
+    #####################
+
+    suits = [card[1] for card in hand]
+    # put into buckets
+    suit_hands = {x: set() for x in SUITS}
+    for card in hand:
+      suit_hands[card[1]].add(card[0])
+
+    #####################
+    # ORGANIZE BY RANKS
+    #####################
+
+    ranks = [card[0] for card in hand]
+    ranks.sort()
+    # put into buckets
+
+    rank_counts = [0 for i in range(15)]
+    for x in ranks:
+      rank_counts[x] += 1
+    rank_count_sets = {x: set() for x in range(1,5)}
+    for i in xrange(2, 15):
+      count = rank_counts[i]
+      if count in rank_count_sets:
+        rank_count_sets[count].add(i)
+      else:
+        assert count == 0
+
+    # CHECK FOR A STRAIGHT FLUSH
+
+    max_straight_flush = 0
+    for suit in suit_hands:
+      if len(suit_hands[suit]) >= 5:
+        straight_num = get_straight(suit_hands[suit])
+        if straight_num > max_straight_flush:
+          max_straight_flush = straight_num
+    if max_straight_flush > 0:
+      # tiebreak by high card
+      return (STRAIGHT_FLUSH, max_straight_flush)
+
+    # CHECK FOR FOUR OF A KIND
+
+    if len(rank_count_sets[4]) > 0:
+      return (KIND4, max(rank_count_sets[4]))
+
+    # CHECK FOR FULL HOUSE
+
+    if (len(rank_count_sets[3]) >= 2) or (len(rank_count_sets[3]) == 1 and len(rank_count_sets[2]) >= 1):
+      trips = max(rank_count_sets[3])
+      return (FULL_HOUSE, trips)
+
+    # CHECK FOR FLUSH
+
+    max_tiebreak = 0
+    for suit in suit_hands:
+      if len(suit_hands[suit]) >= 5:
+        num = get_tiebreak(suit_hands[suit])
+        if num > max_tiebreak:
+          max_tiebreak = num
+    if max_tiebreak > 0:
+      return (FLUSH, max_tiebreak)
+
+    # CHECK FOR STRAIGHT      
+
+    high_rank = get_straight(ranks)
+    if high_rank > 0:
+      return (STRAIGHT, high_rank)
+
+    # CHECK FOR THREE OF A KIND
+
+    if (len(rank_count_sets[3]) >= 1):
+      assert len(rank_count_sets[2]) == 0 and len(rank_count_sets[3]) == 1 and len(rank_count_sets[4]) == 0
+      return (KIND3, get_tiebreak(rank_count_sets[1], 2))
+
+    # CHECK FOR TWO-PAIR       
+
+    if (len(rank_count_sets[2]) >= 2):
+      assert len(rank_count_sets[3]) == 0 and len(rank_count_sets[4]) == 0
+      sorted_pairs = sorted(list(rank_count_sets[2]))
+      remaining_candidates = set(sorted_pairs[:-2]).union(rank_count_sets[1])
+      tiebreak = sorted_pairs[-1] * pows[2] + sorted_pairs[-2] * pows[1] + max(remaining_candidates)
+      return (TWO_PAIR, tiebreak)
+
+    # CHECK FOR PAIR           
+
+    if (len(rank_count_sets[2]) >= 1):
+      assert len(rank_count_sets[2]) == 1 and len(rank_count_sets[3]) == 0 and len(rank_count_sets[4]) == 0
+      pair = max(rank_count_sets[2])
+      tiebreak = pair * pows[3] + get_tiebreak(rank_count_sets[1], 3)
+      return (PAIR, tiebreak)
+
+    # CHECK FOR HIGH           
+    assert len(rank_count_sets[2]) == 0 and len(rank_count_sets[3]) == 0 and len(rank_count_sets[4]) == 0
+    tiebreak = get_tiebreak(rank_count_sets[1])
+    return (HIGH, tiebreak)
 
 def hash_hand(hand):
     return str(sorted(hand))
 
-
 profiling_depth = 0
-
 
 def pretty_print(msg):
     global profiling_depth
@@ -206,5 +346,5 @@ def precompute_hands():
 
 
 if __name__ == '__main__':
-    precompute_hands()
+    #precompute_hands()
     pass
