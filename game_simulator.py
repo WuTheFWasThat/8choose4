@@ -122,13 +122,14 @@ def get_pass(i):
       return handpass
     it+=1
 
-def find_winning_play(hand_A, hand_B, payoff_matrix):
-  print
-  print '---------------------------------------------------------'
-  print
-  print 'Player A\'s hand: ', [card_to_string(x) for x in hand_A]
-  print 'Player B\'s hand: ', [card_to_string(x) for x in hand_B]
-  print
+def find_winning_play(hand_A, hand_B, payoff_matrix, verbose = False):
+  if verbose:
+    print
+    print '---------------------------------------------------------'
+    print
+    print 'Player A\'s hand: ', [card_to_string(x) for x in hand_A]
+    print 'Player B\'s hand: ', [card_to_string(x) for x in hand_B]
+    print
   n = len(payoff_matrix)
   for i in range(n):
     winning = True
@@ -137,9 +138,10 @@ def find_winning_play(hand_A, hand_B, payoff_matrix):
         winning = False
         break
     if winning:
-      print 'Player A has winning strategy by passing:'
-      handpass = get_pass(i)
-      print [card_to_string(hand_A[x]) for x in handpass]
+      if verbose: 
+        handpass = get_pass(i)
+        print 'Player A has winning strategy by passing:'
+        print [card_to_string(hand_A[x]) for x in handpass]
       return 1
   for j in range(n):
     winning = True
@@ -148,13 +150,15 @@ def find_winning_play(hand_A, hand_B, payoff_matrix):
         winning = False
         break
     if winning:
-      print 'Player B has winning strategy by passing:'
-      handpass = get_pass(j)
-      print [card_to_string(hand_B[x]) for x in handpass]
+      if verbose: 
+        handpass = get_pass(j)
+        print 'Player B has winning strategy by passing:'
+        print [card_to_string(hand_B[x]) for x in handpass]
       return -1
-  print 'No winning play!'
-  print
-  print '---------------------------------------------------------'
+  if verbose:
+    print 'No winning play!'
+    print
+    print '---------------------------------------------------------'
   return 0
   
 if __name__=="__main__":
@@ -163,11 +167,12 @@ if __name__=="__main__":
     t = time.time()
     (hand_A, hand_B) = generate_hands()
     payoff_matrix = get_payoff_matrix(hand_A, hand_B)
-    print 'got payoff matrix'
-    print time.time() - t , 'seconds elapsed'
+    #print 'got payoff matrix'
+    #print time.time() - t , 'seconds elapsed'
   
     t = time.time()
     winner = find_winning_play(hand_A, hand_B, payoff_matrix)
     tally[winner] += 1
     print tally
+    print (tally[1] + tally[-1]) / (tally[1] + tally[-1] + tally[0] + 0.0) 
 
