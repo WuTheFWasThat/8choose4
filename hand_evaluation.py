@@ -1,5 +1,8 @@
 import collections
+import contextlib
 import itertools
+import json
+import time
 
 #give best 5 card hand out of a list of cards
 def best_poker_hand(cards):
@@ -41,9 +44,21 @@ TWO_PAIR = -7
 PAIR = -8
 HIGH = -9
 
+
+hands_memo = None
+def classify_hand(hand):
+    global hands_memo
+    if not hands_memo:
+        with profiler('Loading memo...'):
+            with open('final_hands_memo.dat') as f:
+                hands_memo = json.load(f)
+    key = str(sorted(hand))
+    return hands_memo[key]
+
+
 #return (category, strength)
 #strength denotes the value for tiebreaking same category
-def classify_hand(hand):
+def full_classify_hand(hand):
     if (len(hand) != 5): raise Error('hand of wrong size')
     
     #flush?
@@ -142,3 +157,55 @@ def classify_hand(hand):
     for i in range(5):
         stre += ranks[i]*(100**i)
     return (cat, stre)
+
+
+def hash_hand(hand):
+    return str(sorted(hand))
+
+
+profiling_depth = 0
+
+
+def pretty_print(msg):
+    global profiling_depth
+    print '%s%s' % (profiling_depth*'  ', msg)
+
+
+@contextlib.contextmanager
+def profiler(msg):
+    global profiling_depth
+    pretty_print(msg)
+    profiling_depth += 1
+    cur_time = time.time()
+    yield
+    elapsed_time = time.time() - cur_time
+    profiling_depth -= 1
+    pretty_print('Done! Took %04fs.' % (elapsed_time,))
+
+
+def precompute_hands():
+    deck = [(value, suit) for value in xrange(2, 15) for suit in ('c', 'd', 'h', 's')]
+    memo = {}
+    max_size = 2598960
+    pct_done = 0
+    with profiler('Computing %s hand strengths...' % (max_size,)):
+        for hand in itertools.combinations(deck, 5):
+            strength = classify_hand(hand)
+            key = hash_hand(hand)
+            assert(key not in memo), 'Collision at %s hands.' % (len(memo),)
+            memo[key] = strength
+            if len(memo) > (pct_done + 1)*max_size/100:
+                pct_done += 1
+                pretty_print('%s%% done' % (pct_done,))
+    assert(len(memo) == max_size)
+    print 'Got %s hands total.' % (len(memo),)
+    with profiler('Dumping to JSON...'):
+        memo_json = json.dumps(memo)
+    with profiler('Writing to disk...'):
+        with open('hands_memo.dat', 'w') as f:
+            f.write(memo_json)
+
+
+if __name__ == '__main__':
+    precompute_hands()
+    pass
