@@ -32,14 +32,14 @@ def poker_hand_comparator(handA, handB):
     
 #categories:
 STRAIGHT_FLUSH = -1
-KIND4 = -2
-FULL_HOUSE = -3
-FLUSH = -4
-STRAIGHT = -5
-KIND3 = -6
-TWO_PAIR = -7
-PAIR = -8
-HIGH = -9
+KIND4          = -2
+FULL_HOUSE     = -3
+FLUSH          = -4
+STRAIGHT       = -5
+KIND3          = -6
+TWO_PAIR       = -7
+PAIR           = -8
+HIGH           = -9
 
 #return (category, strength)
 #strength denotes the value for tiebreaking same category
