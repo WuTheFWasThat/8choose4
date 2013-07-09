@@ -3,7 +3,7 @@ import itertools
 
 #testing
 def get_card(i):
-    ranks = range(1,14)
+    ranks = range(2,15)
     rank = ranks[i % 13]
     suits = ['c', 'd', 'h', 's']
     suit = suits[i % 4]
@@ -59,12 +59,12 @@ def classify_hand(hand):
     
     #flush?
     suits = [card[1] for card in hand]
-    is_flush = (len(set(suits)) == 1)
-    
+    #is_flush = (len(set(suits)) == 1)
+    is_flush = (suits.count(suits[0]) == 5)
     #care only about ranks now
     ranks = [card[0] for card in hand]
-    #replace aces (1) with (14) (sigh)
-    ranks = [14 if x==1 else x for x in ranks]
+    ##replace aces (1) with (14) (sigh)
+    #ranks = [14 if x==1 else x for x in ranks]
     ranks.sort()
     
     #straight?
@@ -82,7 +82,6 @@ def classify_hand(hand):
     for x in ranks:
         cnt[x] += 1
     amts = cnt.most_common()
-    
     
     #straight flush
     if (is_flush and is_straight):

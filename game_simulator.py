@@ -6,12 +6,12 @@ import hand_evaluation
 # card representation is (card_number, card_suit), where
 #
 # card_number is an integer between 1 and 13, and 
-card_numbers = range(1, 14)
+card_numbers = range(2, 15)
 # card_suit is in the set set(['c', 'd', 'h', 's'])
 card_suits = ['c', 'd', 'h', 's']
 
 hand_size = 8
-num_passed = 4
+num_passed = 2
 
 def get_random(array):
   return array[random.randrange(len(array))]
@@ -70,4 +70,4 @@ for pass1 in choose_generator(hand_size, num_passed):
   payoff_matrix.append(row)
 
 print time.time() - t , 'seconds elapsed'
-print payoff_matrix
+#print payoff_matrix
