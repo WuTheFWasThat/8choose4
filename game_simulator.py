@@ -6,7 +6,7 @@ import hand_evaluation
 # card representation is (card_number, card_suit), where
 #
 # card_number is an integer between 1 and 13, and 
-card_numbers = range(1, 14)
+card_numbers = range(2, 15)
 # card_suit is in the set set(['c', 'd', 'h', 's'])
 card_suits = ['c', 'd', 'h', 's']
 
@@ -41,7 +41,7 @@ def string_to_card(string):
   return (num, suit)
 
 hand_size = 8
-num_passed = 4
+num_passed = 2
 
 def get_random(array):
   return array[random.randrange(len(array))]

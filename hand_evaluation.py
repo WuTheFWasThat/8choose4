@@ -48,12 +48,12 @@ def classify_hand(hand):
     
     #flush?
     suits = [card[1] for card in hand]
-    is_flush = (len(set(suits)) == 1)
-    
+    #is_flush = (len(set(suits)) == 1)
+    is_flush = (suits.count(suits[0]) == 5)
     #care only about ranks now
     ranks = [card[0] for card in hand]
-    #replace aces (1) with (14) (sigh)
-    ranks = [14 if x==1 else x for x in ranks]
+    ##replace aces (1) with (14) (sigh)
+    #ranks = [14 if x==1 else x for x in ranks]
     ranks.sort()
     
     #straight?
@@ -72,14 +72,13 @@ def classify_hand(hand):
         cnt[x] += 1
     amts = cnt.most_common()
     
-    
     #straight flush
     if (is_flush and is_straight):
         cat = STRAIGHT_FLUSH
         #tiebreak by high card
         stre = ranks[4]
         #A 2 3 4 5 case
-        if ranks[4] == 14 and ranks[3] == 5: str = 5
+        if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
     
     #four of a kind
@@ -104,7 +103,7 @@ def classify_hand(hand):
         #tiebreak by high card
         stre = ranks[4]
         #A 2 3 4 5 case
-        if ranks[4] == 14 and ranks[3] == 5: str = 5
+        if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
     
     #trips
