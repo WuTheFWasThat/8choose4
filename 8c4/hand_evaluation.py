@@ -39,7 +39,7 @@ def poker_hand_comparator(handA, handB):
     return 0
   else:
     return -1
-    
+
 #categories:
 STRAIGHT_FLUSH = 9
 KIND4          = 8
@@ -93,7 +93,7 @@ SUITS = ['c', 'd', 'h', 's']
 
 def old_full_classify_hand(hand):
     if (len(hand) != 5): raise Exception('hand of wrong size')
-    
+
     #####################
     # ORGANIZE BY SUITS
     #####################
@@ -111,24 +111,24 @@ def old_full_classify_hand(hand):
     ranks = [card[0] for card in hand]
     ranks.sort()
 
-    is_flush = (suits.count(suits[0]) == 5) 
+    is_flush = (suits.count(suits[0]) == 5)
 
     # care only about ranks now
     is_straight = True
     for i in range(4):
         if ranks[i+1] != ranks[i] + 1:
             is_straight = False
-            break   
+            break
     # special A 2 3 4 5 case
     if ranks[0] == 2 and ranks[1] == 3 and ranks[2] == 4 and ranks[3] == 5 and ranks[4] == 14:
         is_straight = True
-    
+
     # put into buckets
     cnt = collections.Counter()
     for x in ranks:
         cnt[x] += 1
     amts = cnt.most_common()
-    
+
     # straight flush
     if (is_flush and is_straight):
         cat = STRAIGHT_FLUSH
@@ -137,15 +137,15 @@ def old_full_classify_hand(hand):
         # A 2 3 4 5 case
         if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
-    
+
     # four of a kind
     if amts[0][1] == 4:
         return (KIND4, amts[0][0])
-    
+
     # full house
     if amts[0][1] == 3 and amts[1][1] == 2:
         return (FULL_HOUSE, amts[0][0])
-        
+
     # flush
     if (is_flush):
         cat = FLUSH
@@ -153,7 +153,7 @@ def old_full_classify_hand(hand):
         for i in range(5):
             stre += ranks[i]*pows[i]
         return (cat, stre)
-    
+
     # straight
     if is_straight:
         cat = STRAIGHT
@@ -162,11 +162,11 @@ def old_full_classify_hand(hand):
         #A 2 3 4 5 case
         if ranks[4] == 14 and ranks[3] == 5: stre = 5
         return (cat, stre)
-    
+
     # trips
     if amts[0][1] == 3:
         return (KIND3, amts[0][0])
-        
+
     # 2 pair
     if amts[0][1] == 2 and amts[1][1] == 2:
         cat = TWO_PAIR
@@ -180,7 +180,7 @@ def old_full_classify_hand(hand):
         for i in range(3):
             stre += tiebreaker[i]*pows[i]
         return (cat, stre)
-        
+
     # pair
     if amts[0][1] == 2:
         cat = PAIR
@@ -192,7 +192,7 @@ def old_full_classify_hand(hand):
         for i in range(4):
             stre += others[i]*pows[i]
         return (cat, stre)
-        
+
     #high card
     cat = HIGH
     stre = 0
@@ -202,7 +202,7 @@ def old_full_classify_hand(hand):
 
 def full_classify_hand(hand):
     if (len(hand) < 5): raise Exception('hand of wrong size')
-    
+
     #####################
     # ORGANIZE BY SUITS
     #####################
@@ -266,7 +266,7 @@ def full_classify_hand(hand):
     if max_tiebreak > 0:
       return (FLUSH, max_tiebreak)
 
-    # CHECK FOR STRAIGHT      
+    # CHECK FOR STRAIGHT
 
     high_rank = get_straight(ranks)
     if high_rank > 0:
@@ -278,7 +278,7 @@ def full_classify_hand(hand):
       assert len(rank_count_sets[2]) == 0 and len(rank_count_sets[3]) == 1 and len(rank_count_sets[4]) == 0
       return (KIND3, get_tiebreak(rank_count_sets[1], 2))
 
-    # CHECK FOR TWO-PAIR       
+    # CHECK FOR TWO-PAIR
 
     if (len(rank_count_sets[2]) >= 2):
       assert len(rank_count_sets[3]) == 0 and len(rank_count_sets[4]) == 0
@@ -287,7 +287,7 @@ def full_classify_hand(hand):
       tiebreak = sorted_pairs[-1] * pows[2] + sorted_pairs[-2] * pows[1] + max(remaining_candidates)
       return (TWO_PAIR, tiebreak)
 
-    # CHECK FOR PAIR           
+    # CHECK FOR PAIR
 
     if (len(rank_count_sets[2]) >= 1):
       assert len(rank_count_sets[2]) == 1 and len(rank_count_sets[3]) == 0 and len(rank_count_sets[4]) == 0
@@ -295,7 +295,7 @@ def full_classify_hand(hand):
       tiebreak = pair * pows[3] + get_tiebreak(rank_count_sets[1], 3)
       return (PAIR, tiebreak)
 
-    # CHECK FOR HIGH           
+    # CHECK FOR HIGH
     assert len(rank_count_sets[2]) == 0 and len(rank_count_sets[3]) == 0 and len(rank_count_sets[4]) == 0
     tiebreak = get_tiebreak(rank_count_sets[1])
     return (HIGH, tiebreak)

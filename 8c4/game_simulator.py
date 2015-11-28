@@ -65,7 +65,7 @@ def string_to_card(string):
 def card_to_string(card):
   return number_to_string_mapping[card[0]] + card[1]
 
-hand_size = 8
+hand_size =  8
 num_passed = 4
 
 def get_random(array):
@@ -109,7 +109,7 @@ def get_payoff_matrix(hand_A, hand_B):
       # best_hand_A = hand_evaluation.best_poker_hand(new_hand_A)
       # best_hand_B = hand_evaluation.best_poker_hand(new_hand_B)
       # old_winner = hand_evaluation.poker_hand_comparator(best_hand_A, best_hand_B)
-      # if (winner != old_winner): print 'asdf', winner, old_winner
+      # if (winner != old_winner): print winner, old_winner
 
       row.append(winner)
     payoff_matrix.append(row)
