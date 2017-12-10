@@ -1,3 +1,6 @@
 *.sw*
 *.dat
 *.pyc
+
+node_modules/
+todo
