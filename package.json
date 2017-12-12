@@ -11,52 +11,19 @@
     "start": "ts-node src/game.ts",
     "typecheck": "tsc -p . --noEmit",
     "dom": "ts-node dominion.ts",
-    "inc": "ts-node increment.ts"
+    "up": "ts-node uprising/main.ts"
   },
   "dependencies": {
     "express": "^4.15.2",
     "lodash": "^4.15.0",
-    "minimist": "^1.2.0",
-    "sqlite3": "^3.1.8",
-    "ws": "^2.3.1"
+    "minimist": "^1.2.0"
   },
   "devDependencies": {
-    "@types/express": "^4.0.35",
-    "@types/jquery": "^2.0.34",
-    "@types/katex": "^0.5.0",
     "@types/lodash": "^4.14.62",
-    "@types/minimist": "^1.2.0",
-    "@types/mocha": "^2.2.32",
     "@types/node": "^8.0.57",
-    "@types/react": "^15.0.34",
-    "@types/react-dom": "^0.14.18",
-    "@types/sqlite3": "^2.2.33",
-    "@types/webpack": "^2.2.15",
-    "@types/webpack-dev-server": "^2.4.0",
-    "@types/ws": "0.0.41",
-    "awesome-typescript-loader": "^3.1.3",
-    "core-js": "^2.4.1",
-    "css-loader": "^0.23.1",
-    "file-loader": "^0.9.0",
-    "firebase": "^3.4.1",
-    "font-awesome": "^4.6.3",
-    "ignore-styles": "^5.0.1",
     "immutable": "^3.8.1",
-    "jquery": "^3.1.0",
-    "katex": "^0.7.1",
-    "mocha": "^3.0.2",
-    "node-sass": "^3.8.0",
-    "react": "^15.5.4",
-    "react-color": "^2.13.0",
-    "react-dom": "^15.3.1",
-    "react-hot-loader": "^1.3.0",
-    "sass-loader": "^4.0.0",
-    "style-loader": "^0.13.1",
     "ts-node": "^3.1.0",
     "tslint": "^4.5.1",
-    "tslint-loader": "^3.5.3",
-    "typescript": "^2.5.3",
-    "webpack": "^2.6.0",
-    "webpack-dev-server": "^1.12.1"
+    "typescript": "^2.5.3"
   }
 }
