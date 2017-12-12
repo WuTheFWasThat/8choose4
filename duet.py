@@ -30,7 +30,7 @@ def colored(str, color):
     return color + str + colors.END
 
 def strike(text):
-    return u'\u0336'.join([c for c in text])
+    return u'\u0336'.join([c for c in text]) + u'\u0336'
 
 def colored_for_state(str, state):
     if state == -1:
@@ -54,13 +54,13 @@ def print_grid(words, states, guesses_state, reverse=False):
             word = words[index]
             state = states[word]
             padding = 20 - len(word)
-            prefix = '  '
+            prefix = '   '
             if guesses_state[index] is not None:
                 (was_me, was_correct, round) = guesses_state[index]
                 if not was_me:
-                    prefix = u'\u25b2'
+                    prefix = u'\u25b2 '
                 else:
-                    prefix = ' '
+                    prefix = '  '
                 if was_correct:
                     prefix += colored(u'\u2713', colors.GREEN)
                     word = strike(word)
@@ -177,7 +177,7 @@ def duet(args):
 
     while round <= 9:
         print()
-        print('-- ROUND 1 --')
+        print('-- ROUND %d --' % round)
         print()
         print_game()
 
