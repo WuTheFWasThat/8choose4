@@ -165,6 +165,7 @@ def duet(args):
     cluer = 1
     ncorrect = 0
     lost = False
+    tokens = 9
 
     def write_log():
         if args.logfile:
@@ -175,9 +176,10 @@ def duet(args):
                     'log': game_log
                 }, indent=2))
 
-    while round <= 9:
+    while tokens >= 0:
         print()
         print('-- ROUND %d --' % round)
+        print('%d/9 tokens, %d/15 agents remaining' % (tokens, 15 - ncorrect))
         print()
         print_game()
 
@@ -209,6 +211,7 @@ def duet(args):
             elif state[guessed] == 0:
                 print(colored('%s guessed a bystander!' % who, colors.YELLOW))
                 all_guesses[guessed] = (other(cluer), False, round)
+                tokens -= 1
                 break
             else:
                 print(colored('%s recovered an agent!  %s may guess again.' % (who, who), colors.GREEN))
@@ -232,10 +235,13 @@ def duet(args):
             return write_log()
 
         round += 1
+        tokens -= 1
         cluer = other(cluer)
 
+    # TODO: implement sudden death
+
     lost = True
-    print(colored('YOU LOSE (no more turns)!', colors.GREEN))
+    print(colored('YOU LOSE (no more tokens)!', colors.GREEN))
     return write_log()
 
 if __name__ == "__main__":
