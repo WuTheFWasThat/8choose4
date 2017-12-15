@@ -1,4 +1,5 @@
 import { createInterface } from 'readline';
+import { Result, Ok, Err } from './utils/result';
 
 function ask(question: string): Promise<string> {
   return new Promise((resolve, _reject) => {
@@ -26,15 +27,25 @@ for (let rank = 0; rank < CARDS.length; rank++) {
 
 type Kingdom = Array<Effect>;
 
-type Supply = Array<{
-  name: string,
-  counts: Array<number>,
-}>;
+// array of counts of the cards
+type CardCounts = Array<number>;
+
+function subtractCounts(first: CardCounts, second: CardCounts): Result<CardCounts, string> {
+  const answer = first.slice();
+  for (let rank = 0; rank < CARDS.length; rank++) {
+    answer[rank] -= second[rank];
+    if (answer[rank] < 0) {
+      return new Err(`Not enough cards of rank ${rank}`);
+    }
+  }
+  return new Ok(answer);
+}
 
 type GameState = {
-  hands: Array<Array<Card>>,
-  supply: Supply,
-  play: Array<Array<Card>>,
+  n: number, // number of players
+  hands: Array<CardCounts>, // [player, card] -> count
+  supply: Array<CardCounts>, // [player, card] -> count
+  play: Array<CardCounts>, // [player, card] -> count
   kingdom: Array<string>,
   turn: number,
 };
@@ -78,47 +89,71 @@ function getKingdom(): Kingdom {
 }
 
 function gainCard(state: GameState, player: Player, card: Card) {
-  const cardSupply = state.supply[RANKS[card] - 1];
-  if (cardSupply.counts[player] > 0) {
-    cardSupply.counts[player] = cardSupply.counts[player] - 1;
-    state.hands[player].push(card);
+  const cardSupply = state.supply[RANKS[card]];
+  if (cardSupply[player] > 0) {
+    cardSupply[player] = cardSupply[player] - 1;
+    state.hands[player][RANKS[card]] += 1;
   }
 }
 
 interface Strategy {
-  play(gameState: GameState, player: number): Promise<Array<Card>>;
-  buy(gameState: GameState, player: number): Promise<Array<Card>>;
+  play(gameState: GameState, player: number): Promise<CardCounts>;
+}
+
+function newCardCounts(): CardCounts {
+  const counts: Array<number> = [];
+  for (let rank = 0; rank < CARDS.length; rank++) {
+    counts.push(0);
+  }
+  return counts;
+}
+
+function parseCardCounts(cards: Array<string>): Result<CardCounts, string> {
+  const cardCounts = newCardCounts();
+  for (const card in cards) {
+    if (!(card in RANKS)) {
+      return new Err(`No such card: ${card}`);
+    }
+    cardCounts[RANKS[card]] += 1;
+  }
+  return new Ok(cardCounts);
 }
 
 const manualStrat: Strategy = {
-  play: async function(gameState: GameState, player: number): Promise<Array<Card>> {
-    let cards;
+  play: async function(_gameState: GameState, _player: number): Promise<CardCounts> {
     while (true) {
-      cards = (await ask('Play cards?')).split(' ').map(parseInt);
-      if (cards.length > gameState.playerStates[player].maxActions) {
-        console.log('Played too many actions');
-        continue;
+      const cards = (await ask('Play cards?')).split(' ');
+      const result = parseCardCounts(cards);
+      if (result.isOk()) {
+        return result.unwrap();
       }
-      return cards;
+      console.log(result.err().unwrap());
     }
   },
-  buy: async function(gameState: GameState, player: number): Promise<Array<Card>> {
-    let cards;
-    while (true) {
-      cards = (await ask('Buy cards?')).split(' ').map(parseInt);
-      if (cards.length > gameState.playerStates[player].maxActions) {
-        console.log('Played too many actions');
-        continue;
-      }
-      return cards;
+}
+
+function hasWon(gameState: GameState, player: number) {
+  const hand = gameState.hands[player];
+  if (hand[RANKS['Q']] > 0 && hand[RANKS['K']] > 0) {
+    return true;
+  }
+  return false;
+}
+
+function gameEnded(gameState: GameState) {
+  for (let player = 0; player < gameState.n; player++) {
+    if (hasWon(gameState, player)) {
+      return true;
     }
   }
+  return false;
 }
 
 async function main(strats: Array<Strategy>) {
   const nplayers = strats.length;
   const kingdom: Kingdom = getKingdom();
   const state: GameState = {
+    n: nplayers,
     turn: 0,
     hands: [],
     supply: [],
@@ -126,21 +161,15 @@ async function main(strats: Array<Strategy>) {
     kingdom: kingdom.map((effect) => effect.name),
   };
 
-  kingdom.forEach((effect) => {
+  for (let player = 0; player < nplayers; player++) {
     let counts: Array<number> = [];
-    for (let player = 0; player < nplayers; player++) {
+    for (let rank = 0; rank < CARDS.length; rank++) {
       counts.push(2);
     }
-    state.supply.push({
-      name: effect.name,
-      counts: counts,
-    });
-  });
-  for (let player = 0; player < nplayers; player++) {
-    state.hands.push([]);
-    state.play.push([]);
+    state.supply.push(counts);
+    state.hands.push(newCardCounts());
+    state.play.push(newCardCounts());
     gainCard(state, player, 'A');
-    supply.push();
   }
 
   const history = [];
@@ -155,6 +184,20 @@ async function main(strats: Array<Strategy>) {
       turn: turn,
       state: JSON.parse(JSON.stringify(state)),
     });
+
+    for (let player = 0; player < nplayers; player++) {
+      const strat = strats[player];
+      while (true) {
+        const cards = await strat.play(state, player);
+        const result = subtractCounts(state.hands[player], cards);
+        if (result.isOk()) {
+          state.hands[player] = result.unwrap();
+          state.play[player] = result.unwrap();
+          break;
+        }
+        console.log(result.err().unwrap());
+      }
+    }
 
     console.log(`Turn ${turn} ended`);
     console.log('-----------------------------------');
