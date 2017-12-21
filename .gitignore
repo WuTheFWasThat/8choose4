@@ -2,6 +2,7 @@
 *.dat
 *.pyc
 
+.DS_Store
 node_modules/
 todo
 game_log.json

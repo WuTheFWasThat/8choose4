@@ -35,7 +35,7 @@ function subtractCounts(first: CardCounts, second: CardCounts): Result<CardCount
   for (let rank = 0; rank < CARDS.length; rank++) {
     answer[rank] -= second[rank];
     if (answer[rank] < 0) {
-      return new Err(`Not enough cards of rank ${rank}`);
+      return new Err(`Not enough cards: ${CARDS[rank]}`);
     }
   }
   return new Ok(answer);
@@ -83,7 +83,7 @@ function getKingdom(): Kingdom {
     }
     used[index] = true;
     kingdom.push(effect);
-    console.log(`${CARDS[rank]}: ${effect.desc}`)
+    console.log(`${CARDS[rank]}: ${effect.name}${effect.desc}`)
   }
   return kingdom;
 }
@@ -110,7 +110,7 @@ function newCardCounts(): CardCounts {
 
 function parseCardCounts(cards: Array<string>): Result<CardCounts, string> {
   const cardCounts = newCardCounts();
-  for (const card in cards) {
+  for (const card of cards) {
     if (!(card in RANKS)) {
       return new Err(`No such card: ${card}`);
     }
@@ -119,10 +119,21 @@ function parseCardCounts(cards: Array<string>): Result<CardCounts, string> {
   return new Ok(cardCounts);
 }
 
+function handStr(counts: CardCounts) {
+  const cards: Array<Card> = [];
+  for (let rank = 0; rank < CARDS.length; rank++) {
+    for (let count = 0; count < counts[rank]; count++) {
+      cards.push(CARDS[rank]);
+    }
+  }
+  return cards.join(' ')
+}
+
 const manualStrat: Strategy = {
-  play: async function(_gameState: GameState, _player: number): Promise<CardCounts> {
+  play: async function(gameState: GameState, player: number): Promise<CardCounts> {
+    console.log(`Your hand: ${handStr(gameState.hands[player])}`);
     while (true) {
-      const cards = (await ask('Play cards?')).split(' ');
+      const cards = (await ask('Play cards? ')).split(' ');
       const result = parseCardCounts(cards);
       if (result.isOk()) {
         return result.unwrap();
@@ -169,6 +180,7 @@ async function main(strats: Array<Strategy>) {
     state.supply.push(counts);
     state.hands.push(newCardCounts());
     state.play.push(newCardCounts());
+    gainCard(state, player, 'A');
     gainCard(state, player, 'A');
   }
 
