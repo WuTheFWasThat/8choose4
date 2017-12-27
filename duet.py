@@ -162,7 +162,7 @@ def duet(args):
             print_grid(words, p2board, guesses_state)
 
     round = 1
-    cluer = 1
+    cluer = random.randint(1, 2)
     ncorrect = 0
     nmistakes = 0
     lost = False
