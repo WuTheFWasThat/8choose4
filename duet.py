@@ -4,7 +4,6 @@ from __future__ import print_function
 import argparse
 import json
 import random
-import sys
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--seed', type=int, default=0, help='Random seed')
@@ -23,9 +22,6 @@ class colors:
     END = '\033[0m'
     GRAY = '\033[97m'
 
-def bold(str):
-    return colors.BOLD + str + colors.END
-
 def colored(str, color):
     return color + str + colors.END
 
@@ -41,16 +37,12 @@ def colored_for_state(str, state):
         assert state == 0
         return colored(str, colors.YELLOW)
 
-def print_grid(words, states, guesses_state, reverse=False):
+def print_grid(words, states, guesses_state):
     assert len(words) == 25
-    print()
     for i in range(5):
         str = '    '
         for j in range(5):
-            if reverse:
-                index = 5*(4-i) + (4-j)
-            else:
-                index = 5*i + j
+            index = 5*i + j
             word = words[index]
             state = states[word]
             padding = 20 - len(word)
@@ -71,28 +63,23 @@ def print_grid(words, states, guesses_state, reverse=False):
 
             str += prefix + ' ' + colored_for_state(word, state) + ' ' * padding
         print(str)
-    print()
-
-def find_word(words, word):
-    try:
-        return words.index(word)
-    except ValueError:
-        return -1
 
 def ask_word(question, words):
     while True:
-        word = raw_input(question)
+        word = raw_input(question).upper()
         if word == '-':
             return None
-        word = word.upper()
-        index = find_word(words, word)
-        if index >= 0:
+        try:
+            words.index(word)
             return word
-        print('That word is not on the board!')
+        except ValueError:
+            print('That word is not on the board!')
 
 def other(player):
     assert player == 1 or player == 2
     return 2 if player == 1 else 1
+
+# TODO: implement replaying from logs
 
 def setup(dictionary):
     words = sorted(random.sample(dictionary, 25))
@@ -110,24 +97,15 @@ def setup(dictionary):
         assert i <= len(words)
         return i
 
-    # 5 cards only p1 knows
-    i = add_state(5, 1, 0, i)
-    # 5 cards only p2 knows
-    i = add_state(5, 0, 1, i)
-    # 3 cards both p1 and p2 know
-    i = add_state(3, 1, 1, i)
-    # 1 assassin card only p1 knows
-    i = add_state(1, -1, 0, i)
-    # 1 assassin card only p2 knows
-    i = add_state(1, 0, -1, i)
-    # 1 assassin card only p1 knows, also good for p2
-    i = add_state(1, -1, 1, i)
-    # 1 assassin card only p2 knows, also good for p1
-    i = add_state(1, 1, -1, i)
-    # 1 assassin card both p1 and p2 know
-    i = add_state(1, -1, -1, i)
-    # the rest are bystanders
-    i = add_state(7, 0, 0, i)
+    i = add_state(5, 1, 0, i)   # 5 cards only p1 knows
+    i = add_state(5, 0, 1, i)   # 5 cards only p2 knows
+    i = add_state(3, 1, 1, i)   # 3 cards both p1 and p2 know
+    i = add_state(1, -1, 0, i)  # 1 assassin card only p1 knows
+    i = add_state(1, 0, -1, i)  # 1 assassin card only p2 knows
+    i = add_state(1, -1, 1, i)  # 1 assassin card only p1 knows, also good for p2
+    i = add_state(1, 1, -1, i)  # 1 assassin card only p2 knows, also good for p1
+    i = add_state(1, -1, -1, i) # 1 assassin card both p1 and p2 know
+    i = add_state(7, 0, 0, i)   # the rest are bystanders
     assert i == len(words)
 
     random.shuffle(words)
@@ -136,14 +114,12 @@ def setup(dictionary):
 
 def duet(args):
     player = args.player
+    assert player == 1 or player == 2
 
-    assert args.player == 1 or args.player == 2
-    random.seed(args.seed)
     with open(args.dictionary) as f:
         dictionary = map(lambda x: x.upper(), filter(len, f.read().split()))
+    random.seed(args.seed)
     words, p1board, p2board = setup(dictionary)
-
-    game_log = []
 
     all_guesses = {} # dict from index to (player, correct, round)
 
@@ -155,16 +131,11 @@ def duet(args):
                 guesses_state.append((p == player, correct, round))
             else:
                 guesses_state.append(None)
-        if player == 1:
-            print_grid(words, p1board, guesses_state)
-        else:
-            # could do reverse=True, but no need..
-            print_grid(words, p2board, guesses_state)
+        print()
+        print_grid(words, p1board if player == 1 else p2board, guesses_state)
+        print()
 
-    round = 1
-    cluer = random.randint(1, 2)
-    ncorrect = 0
-    nmistakes = 0
+    game_log = []
     lost = False
 
     def write_log():
@@ -176,33 +147,25 @@ def duet(args):
                     'log': game_log
                 }, indent=2))
 
+    round = 1
+    cluer = random.randint(1, 2)
+    ncorrect = 0
+    nmistakes = 0
     while round <= 9:
         print()
-        print('-- ROUND %d of 9 --' % round)
+        print('-' * 50 + ' ROUND %d of 9 ' % round + '-' * 50)
         print('%d/15 agents remaining' % (15 - ncorrect))
-        print()
         print_game()
 
-        if cluer == 1:
-            state = p1board
-        else:
-            state = p2board
+        state = p1board if cluer == 1 else p2board
 
-        if cluer == player:
-            clue = raw_input('Give a clue: ')
-        else:
-            clue = raw_input('What did they clue? ')
+        clue = raw_input('Give a clue: ' if cluer == player else 'What did they clue? ')
 
         round_guesses = []
         while True:
-            if cluer == player:
-                guessed = ask_word('What did they guess (Dash if nothing)? ', words)
-                who = 'They'
-            else:
-                guessed = ask_word('Guess a word (Dash to stop): ', words)
-                who = 'You'
-            if guessed is None:
-                break
+            who = 'They' if cluer == player else 'You'
+            guessed = ask_word('What did %s guess (Dash if nothing)? ' % who.lower(), words)
+            if guessed is None: break
             round_guesses.append(guessed)
             if state[guessed] == -1:
                 print(colored('YOU LOSE (guessed an assassin)!', colors.RED))
@@ -218,8 +181,7 @@ def duet(args):
                 all_guesses[guessed] = (other(cluer), True, round)
                 ncorrect += 1
                 print_game()
-                if ncorrect == 15: # won!
-                    break
+                if ncorrect == 15: break # won!
 
         game_log.append({
             'round': round,
@@ -228,8 +190,7 @@ def duet(args):
             'ncorrect': ncorrect,
             'nmistakes': nmistakes,
         })
-        if lost:
-            return write_log()
+        if lost: return write_log()
 
         if ncorrect == 15:
             print(colored('YOU WIN!', colors.GREEN))
