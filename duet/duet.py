@@ -7,7 +7,7 @@ import random
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--seed', type=int, default=0, help='Random seed')
-parser.add_argument('--dictionary', type=str, default='duet_words.txt',
+parser.add_argument('--dictionary', type=str, default='dictionaries/kodenames.txt',
                     help='Words to use')
 parser.add_argument('--logfile', type=str, default='game_log.json',
                     help='Where to write game log')
