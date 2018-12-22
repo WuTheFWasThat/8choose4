@@ -1,5 +1,6 @@
 from __future__ import division
 from __future__ import print_function
+from builtins import input
 
 import argparse
 import json
@@ -66,7 +67,7 @@ def print_grid(words, states, guesses_state):
 
 def ask_word(question, words):
     while True:
-        word = raw_input(question).upper()
+        word = input(question).upper()
         if word == '-':
             return None
         try:
@@ -117,7 +118,7 @@ def duet(args):
     assert player == 1 or player == 2
 
     with open(args.dictionary) as f:
-        dictionary = map(lambda x: x.upper(), filter(len, f.read().split()))
+        dictionary = list(map(lambda x: x.upper(), filter(len, f.read().split())))
     random.seed(args.seed)
     words, p1board, p2board = setup(dictionary)
 
@@ -159,7 +160,7 @@ def duet(args):
 
         state = p1board if cluer == 1 else p2board
 
-        clue = raw_input('Give a clue: ' if cluer == player else 'What did they clue? ')
+        clue = input('Give a clue: ' if cluer == player else 'What did they clue? ')
 
         round_guesses = []
         while True:
