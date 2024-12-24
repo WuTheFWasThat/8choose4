@@ -13,6 +13,8 @@ WIN_NOT = Category(name="WIN_NOT", max=2)
 WIN_NO_OPEN = Category(name="WIN_NO_OPEN", max=1)
 WIN_SUIT = Category(name="WIN_SUIT", max=1)
 WIN_WHICH = Category(name="WIN_WHICH", max=1)
+WIN_WITH_SMALL = Category(name="WIN_WITH_SMALL", max=1)
+WIN_9S = Category(name="WIN_9S", max=1)
 DEFAULT = Category(name="DEFAULT", max=None)
 
 @dataclass
@@ -21,17 +23,18 @@ class Mission():
     difficulties: list[int]
     category: Category
     shared: bool = False
+    conflicts: list[Mission]
 
 ALL_MISSIONS = []
-def add_mission(desc, difficulties, category=DEFAULT, shared=False):
-    ALL_MISSIONS.append(
-        Mission(
-            category=category,
-            desc=desc,
-            difficulties=difficulties,
-            shared=shared,
-        )
+def add_mission(desc, difficulties, category=DEFAULT, shared=False, conflicts=()):
+    mission = Mission(
+        category=category,
+        desc=desc,
+        difficulties=difficulties,
+        shared=shared,
+        conflicts=list(conflicts)
     )
+    ALL_MISSIONS.append(mission)
 
 add_mission(
     "Win X tricks (predict the exact number and show)",
@@ -93,7 +96,7 @@ add_mission(
 
 add_mission(
     "Win a trick that has only even numbers (2,4,6,8)",
-    [2, 5, 6],
+    [3, 5, 6],
     WIN_VALUE,
 )
 
@@ -123,27 +126,36 @@ add_mission(
 
 add_mission(
     "Win a trick with a 6.",
-    [2, 3, 3],
+    [2, 3, 4],
+    WIN_WITH_SMALL,
 )
-
 add_mission(
     "Win a trick with a 5.",
     [2, 3, 4],
+    WIN_WITH_SMALL,
 )
-
 add_mission(
     "Win a trick with a 3.",
     [3, 4, 5],
+    WIN_WITH_SMALL,
+)
+add_mission(
+    "Win a trick with a 2.",
+    [3, 4, 5],
+    WIN_WITH_SMALL,
 )
 
 add_mission(
     "Win a 5 with a 7.",
     [1, 2, 2],
+    WIN_WITH_SMALL,
+    conflicts=[nowin_7],
 )
 
 add_mission(
     "Win an 8 with a 4.",
     [3, 4, 5],
+    WIN_WITH_SMALL,
 )
 
 add_mission(
@@ -151,10 +163,6 @@ add_mission(
     [2, 3, 4],
 )
 
-add_mission(
-    "Win a trick with a 2.",
-    [3, 4, 5],
-)
 
 SUITS = ["♠", "♥", "♣", "♦"]
 for suit in SUITS:
@@ -176,28 +184,38 @@ add_mission(
 )
 
 add_mission(
-    "Win at least three 9s.",
-    [3, 4, 5],
-)
-
-add_mission(
     "Win at least two 7s.",
     [2, 2, 2],
 )
 
 add_mission(
-    "Win all four 9s.",
-    [4, 5, 6],
+    "Win at least three 9s.",
+    [3, 4, 5],
+    WIN_9S,
 )
 
 add_mission(
-    "Win exactly three 6s",
-    [3, 4, 4],
+    "Win all four 9s.",
+    [4, 5, 6],
+    WIN_9S,
 )
 
 add_mission(
     "Win exactly two 9s",
     [2, 3, 3],
+    WIN_9S,
+)
+
+add_mission(
+    "Win exactly one 9",
+    [2, 2, 2],
+    WIN_9S,
+)
+
+
+add_mission(
+    "Win exactly three 6s",
+    [3, 4, 4],
 )
 
 for suit in SUITS:
@@ -252,45 +270,46 @@ add_mission(
 )
 
 add_mission(
+    "Two 1s in the last trick",
+    [5, 4, 4],
+    shared=True,
+)
+
+add_mission(
     "Win exactly one ♠ and one ♥ card",
     [4, 4, 4],
     WIN_SUIT,
 )
 
-add_mission(
-    "Win at least seven ♦ cards",
-    [3, 3, 3],
-    WIN_SUIT,
-)
+for suit in SUITS[:2]:
+    add_mission(
+        f"Win at least seven {suit} cards",
+        [3, 3, 3],
+        WIN_SUIT,
+    )
+    add_mission(
+        f"Win exactly one {suit} card",
+        [3, 3, 3],
+        WIN_SUIT,
+    )
 
-add_mission(
-    "Win at least five ♠ cards",
-    [2, 3, 3],
-    WIN_SUIT,
-)
+for suit in SUITS[2:]:
+    add_mission(
+        f"Win at least five {suit} cards",
+        [2, 2, 2],
+        WIN_SUIT,
+    )
+    add_mission(
+        f"Win exactly two {suit} cards",
+        [3, 4, 4],
+        WIN_SUIT,
+    )
 
-add_mission(
-    "Win exactly two ♥ cards.",
-    [3, 4, 4],
-    WIN_SUIT,
-)
-
-add_mission(
-    "Win exactly two ♣ cards.",
-    [3, 4, 4],
-    WIN_SUIT,
-)
-
-add_mission(
-    "Win exactly one ♠ card.",
-    [3, 3, 4],
-    WIN_SUIT,
-)
 
 add_mission(
     "Win no ♠ cards.",
     [2, 2, 2],
-    WIN_SUIT,
+    WIN_NOT,
 )
 
 add_mission(
@@ -306,12 +325,6 @@ add_mission(
 )
 
 add_mission(
-    "Win the K trump",
-    [2, 2, 2],
-    WIN_TRUMP,
-)
-
-add_mission(
     "Win exactly one trump, or hold all trumps",
     [3, 3, 3],
     WIN_TRUMP,
@@ -319,7 +332,7 @@ add_mission(
 
 add_mission(
     "Win the J trump",
-    [2, 2, 2],
+    [None, 2, 2],
     WIN_TRUMP,
 )
 
@@ -330,8 +343,20 @@ add_mission(
 )
 
 add_mission(
+    "Win the K trump",
+    [2, 2, 2],
+    WIN_TRUMP,
+)
+
+add_mission(
     "Win exactly 3 trumps, or hold all trumps",
-    [3, 3, 3],
+    [None, 3, 3],
+    WIN_TRUMP,
+)
+
+add_mission(
+    "Win exactly 2 trumps, or hold all trumps",
+    [3, None, None],
     WIN_TRUMP,
 )
 
@@ -376,15 +401,27 @@ for suit in SUITS:
         WIN_NOT,
     )
 
-add_mission(
+nowin_7 = add_mission(
     f"Don’t win with a 7",
     [3, 3, 3],
+    shared=True,
+)
+
+nowin_8 = add_mission(
+    f"Don’t win with a 8",
+    [4, 4, 4],
     shared=True,
 )
 
 add_mission(
     f"Don’t play trump in a trick opened with ♠",
     [3, 3, 3],
+    shared=True,
+)
+
+add_mission(
+    f"Don’t open a trick with ♠",
+    [5, 5, 5],
     shared=True,
 )
 
@@ -498,13 +535,13 @@ add_mission(
 )
 
 add_mission(
-    "I win only the last trick",
+    "Win only the last trick",
     [4, 4, 4],
     WIN_X,
 )
 
 add_mission(
-    "I win only the first trick",
+    "Win only the first trick",
     [4, 3, 3],
     WIN_X,
 )
@@ -581,7 +618,7 @@ if st.toggle("show rules", value=False):
     st.markdown("""
 Game is played with:
 - 1-9 of each suit
-- four trumps (submarines in original game lingo): J Q K Joker
+- four trumps: J Q K Joker, remove the J for 3 players
 
 captain is person who holds joker
     """)
@@ -616,33 +653,50 @@ def get_missions_and_mods(players, difficulty):
         mods.append(
             "Each player is allowed one hint"
         )
+    if random.random() < 0.1:
+        mods.append(
+            "Hints reveal any (non-trump) card, but not any information about it"
+        )
+    else:
+        mods.append(
+            "Hints can only reveal any card that is highest, lowest, or both in a non-trump suit, along with that information (highest/lowest/both)"
+        )
+
+    if random.random() < 0.1:
+        mods.append(
+            "Mission selection proceeds for two rounds"
+        )
+        difficulty += 1
 
     if random.random() < 0.1:
         mods.append(
             "After selecting missions, everyone can pass one card face down to the left"
         )
-        difficulty += 4
+        difficulty += 3
     elif random.random() < 0.1:
         mods.append(
             "After selecting missions, everyone can pass one card face down to the right"
         )
         difficulty += 3
 
-    if random.random() < 0.1:
-        mods.append(
-            "Mission selection proceeds for two rounds"
-        )
-        difficulty += 2
-
     sum_difficulty = 0
     while sum_difficulty != difficulty:
         mission = random.choice(ALL_MISSIONS)
         mission_difficulty = mission.difficulties[players_idx]
+        if mission_difficulty is None:
+            continue
         if mission_difficulty + sum_difficulty > difficulty:
             continue
         if cat_counts[mission.category.name] == mission.category.max:
             continue
         if mission in missions:
+            continue
+        conflicts = False
+        for conflict in mission.conflicts:
+            if conflict in missions:
+                conflicts = True
+                break
+        if conflicts:
             continue
         sum_difficulty += mission_difficulty
         cat_counts[mission.category.name] += 1
@@ -662,7 +716,7 @@ with col_mission:
             if mission.shared:
                 st.text("(shared)")
             else:
-                st.text_input("assigned to", key=f"mission-assign-{i}")
+                st.text_input("assigned to", key=f"mission-assign-{st.session_state.random_seed}-{i}")
         # st.markdown(f"- {mission.desc}")
         # st.text_input("assigned to")
 
