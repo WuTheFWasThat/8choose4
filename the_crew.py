@@ -11,6 +11,7 @@ WIN_VALUE = Category(name="WIN_VALUE", max=1)
 WIN_TRUMP = Category(name="WIN_TRUMP", max=1)
 WIN_NOT = Category(name="WIN_NOT", max=2)
 WIN_NO_OPEN = Category(name="WIN_NO_OPEN", max=1)
+WIN_CONSECUTIVE = Category(name="WIN_CONSECUTIVE", max=1)
 WIN_SUIT = Category(name="WIN_SUIT", max=1)
 WIN_WHICH = Category(name="WIN_WHICH", max=1)
 WIN_WITH_SMALL = Category(name="WIN_WITH_SMALL", max=1)
@@ -23,7 +24,7 @@ class Mission():
     difficulties: list[int]
     category: Category
     shared: bool = False
-    conflicts: list[Mission]
+    conflicts: list["Mission"] = field(default_factory=list)
 
 ALL_MISSIONS = []
 def add_mission(desc, difficulties, category=DEFAULT, shared=False, conflicts=()):
@@ -145,11 +146,11 @@ add_mission(
     WIN_WITH_SMALL,
 )
 
-add_mission(
+win_5_with_7 = add_mission(
     "Win a 5 with a 7.",
     [1, 2, 2],
     WIN_WITH_SMALL,
-    conflicts=[nowin_7],
+    # conflicts=[nowin_7],
 )
 
 add_mission(
@@ -223,6 +224,16 @@ for suit in SUITS:
         f"Win the {suit} 1,2 and 3",
         [2, 3, 3],
     )
+
+add_mission(
+    f"Win at least one of each number 1-9",
+    [4, 5, 6],
+)
+
+add_mission(
+    f"Win a 7, 8, and 9 of different suits",
+    [4, 4, 5],
+)
 
 add_mission(
     "Win the ♣ 6 and the ♦ 7",
@@ -370,21 +381,39 @@ add_mission(
     [3, 3, 3],
 )
 
+# add_mission(
+#     "Don’t open a trick with a ♠, ♦ or ♣ card",
+#     [4, 3, 3],
+#     WIN_NO_OPEN,
+# )
+
 add_mission(
-    "Don’t open a trick with a ♠, ♦ or ♣ card",
+    "Don't open a trick with a ♠ or ♥ card",
+    [2, 1, 1],
+    WIN_NO_OPEN,
+)
+
+add_mission(
+    "Don't open a trick with a ♦ or ♣ card",
+    [2, 1, 1],
+    WIN_NO_OPEN,
+)
+
+add_mission(
+    "Don't open a trick with a trump card",
+    [2, 2, 2],
+    WIN_NO_OPEN,
+)
+
+add_mission(
+    "Don't win a trick with a ♦ card",
     [4, 3, 3],
     WIN_NO_OPEN,
 )
 
 add_mission(
-    "Don’t open a trick with a ♠ or ♥ card",
-    [2, 1, 1],
-    WIN_NO_OPEN,
-)
-
-add_mission(
-    "Don’t open a trick with a ♦ or ♣ card",
-    [2, 1, 1],
+    "Don't win a trick with a ♥ card",
+    [4, 3, 3],
     WIN_NO_OPEN,
 )
 
@@ -405,6 +434,7 @@ nowin_7 = add_mission(
     f"Don’t win with a 7",
     [3, 3, 3],
     shared=True,
+    conflicts=[win_5_with_7],
 )
 
 nowin_8 = add_mission(
@@ -499,12 +529,6 @@ add_mission(
 )
 
 add_mission(
-    "Do not win two consecutive tricks.",
-    [3, 2, 2],
-    WIN_NOT,
-)
-
-add_mission(
     "Win the last trick",
     [2, 3, 3],
     WIN_X,
@@ -559,29 +583,46 @@ add_mission(
 )
 
 add_mission(
-    "Win two consecutive tricks",
-    [1, 1, 1],
-)
-
-add_mission(
-    "Win three consecutive tricks",
-    [2, 3, 4],
-)
-
-add_mission(
     "Win exactly four tricks",
     [2, 3, 5],
     WIN_X,
 )
 
 add_mission(
+    "Do not win two consecutive tricks.",
+    [3, 2, 2],
+    WIN_CONSECUTIVE,
+)
+
+add_mission(
+    "Nobody can win two consecutive tricks.",
+    [5, 4, 3],
+    WIN_CONSECUTIVE,
+    shared=True
+)
+
+add_mission(
+    "Win two consecutive tricks",
+    [1, 1, 1],
+    WIN_CONSECUTIVE,
+)
+
+add_mission(
+    "Win three consecutive tricks",
+    [2, 3, 4],
+    WIN_CONSECUTIVE,
+)
+
+add_mission(
     "Win exactly three consecutive tricks.",
     [3, 3, 4],
+    WIN_CONSECUTIVE,
 )
 
 add_mission(
     "Win exactly two consecutive tricks.",
     [3, 3, 3],
+    WIN_CONSECUTIVE,
 )
 
 add_mission(
@@ -620,12 +661,16 @@ Game is played with:
 - 1-9 of each suit
 - four trumps: J Q K Joker, remove the J for 3 players
 
-captain is person who holds joker
-    """)
+Captain is person who holds joker, who announces themselves
+They pick missions first, and have the first lead
+
+Start at level 1.  After each win, go up a level.
+After each failure, you may choose whether to re-roll the missions.
+""")
 
 st.header("settings")
 players = st.radio("Players", [3, 4, 5], horizontal=True)
-difficulty = st.slider("Difficulty", min_value=1, max_value=12, value=None, step=1)
+difficulty = st.slider("Difficulty", min_value=1, max_value=13, value=None, step=1)
 
 # Add a session state to track when to regenerate
 if 'random_seed' not in st.session_state:
@@ -644,22 +689,27 @@ def get_missions_and_mods(players, difficulty):
     players_idx = players - 3
     cat_counts = defaultdict(int)
     difficulty += players
+    all_conflicts = []
 
     if random.random() < 0.1:
         mods.append(
-            f"Shared hints:  the entire team is allowed {players-1} hints (one player can use multiple)"
+            f"**Shared hints**:  the entire team is allowed {players-1} hints (one player can use multiple)"
         )
     else:
         mods.append(
-            "Each player is allowed one hint"
+            "**Individual hints**: Each player is allowed one hint"
         )
     if random.random() < 0.1:
         mods.append(
-            "Hints reveal any (non-trump) card, but not any information about it"
+            "**Reveal-only hints**: hints reveal any (possibly-trump) card, but no additional information about it"
+        )
+    elif random.random() < 0.1:
+        mods.append(
+            "**Count hints**: hints reveal the number of cards you have in some non-trump suit"
         )
     else:
         mods.append(
-            "Hints can only reveal any card that is highest, lowest, or both in a non-trump suit, along with that information (highest/lowest/both)"
+            "**Standard hints**: Hints can only reveal any card that is highest, lowest, or both in a non-trump suit, along with that information (highest/lowest/both)"
         )
 
     if random.random() < 0.1:
@@ -670,12 +720,12 @@ def get_missions_and_mods(players, difficulty):
 
     if random.random() < 0.1:
         mods.append(
-            "After selecting missions, everyone can pass one card face down to the left"
+            "**Trading (cw)**: After selecting missions, everyone can pass one card face down to the left"
         )
         difficulty += 3
     elif random.random() < 0.1:
         mods.append(
-            "After selecting missions, everyone can pass one card face down to the right"
+            "**Trading (ccw)**: After selecting missions, everyone can pass one card face down to the right"
         )
         difficulty += 3
 
@@ -689,7 +739,7 @@ def get_missions_and_mods(players, difficulty):
             continue
         if cat_counts[mission.category.name] == mission.category.max:
             continue
-        if mission in missions:
+        if mission in all_conflicts:
             continue
         conflicts = False
         for conflict in mission.conflicts:
@@ -698,6 +748,8 @@ def get_missions_and_mods(players, difficulty):
                 break
         if conflicts:
             continue
+        all_conflicts.append(mission)
+        all_conflicts.extend(mission.conflicts)
         sum_difficulty += mission_difficulty
         cat_counts[mission.category.name] += 1
         missions.append(mission)
@@ -709,7 +761,7 @@ col_mission, col_mods = st.columns([2, 1])  # Adjust ratio as needed
 with col_mission:
     st.header("missions")
     for i, mission in enumerate(missions):
-        col1, col2 = st.columns([1, 1])  # Adjust ratio as needed
+        col1, col2, col3 = st.columns([2, 1, 1])  # Adjust ratio as needed
         with col1:
             st.markdown(f"- {mission.desc}")
         with col2:
@@ -717,6 +769,8 @@ with col_mission:
                 st.text("(shared)")
             else:
                 st.text_input("assigned to", key=f"mission-assign-{st.session_state.random_seed}-{i}")
+        with col3:
+            st.checkbox("complete", value=False, key=f"mission-check-{st.session_state.random_seed}-{i}", label_visibility='hidden')
         # st.markdown(f"- {mission.desc}")
         # st.text_input("assigned to")
 
